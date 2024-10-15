@@ -4,8 +4,6 @@ export default function Home() {
   const groups = [
     { id: '1', name: 'General Discussion', members: 1234, posts: 5678, icon: '💬' },
     { id: '2', name: 'Tech Talk', members: 987, posts: 3456, icon: '💻' },
-    { id: '3', name: 'Creative Corner', members: 567, posts: 2345, icon: '🎨' },
-    { id: '4', name: 'Health & Wellness', members: 789, posts: 4567, icon: '🧘' },
   ];
 
   return (

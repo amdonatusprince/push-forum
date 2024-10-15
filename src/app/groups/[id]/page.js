@@ -26,7 +26,7 @@ export default function GroupChatPage() {
       const message = {
         id: Date.now(),
         content: newMessage,
-        sender: { name: 'You', avatar: 'https://via.placeholder.com/40' },
+        sender: { name: 'You', avatar: `https://api.dicebear.com/9.x/micah/svg?seed=${"justholder"}.svg` },
         timestamp: new Date().toISOString(),
       };
       setMessages([...messages, message]);
@@ -34,6 +34,7 @@ export default function GroupChatPage() {
     }
   };
 
+  
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -42,7 +43,7 @@ export default function GroupChatPage() {
         const message = {
           id: Date.now(),
           content: event.target.result,
-          sender: { name: 'You', avatar: 'https://via.placeholder.com/40' },
+          sender: { name: 'You', avatar: `https://api.dicebear.com/9.x/micah/svg?seed=${"placeholder"}.svg` },
           timestamp: new Date().toISOString(),
         };
         setMessages([...messages, message]);

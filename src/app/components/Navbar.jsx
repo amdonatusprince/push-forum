@@ -25,9 +25,6 @@ export default function Navbar() {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-700 hover:text-indigo-600 transition duration-300">
-                Explore
-              </Link>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-md shadow-md transition duration-300 transform hover:scale-105"
