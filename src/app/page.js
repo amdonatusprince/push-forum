@@ -22,7 +22,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {groups.map((group) => (
             <Link key={group.id} href={`/groups/${group.id}`}>
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition duration-300 transform hover:scale-105">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition duration-300 transform hover:scale-105 cursor-pointer">
                 <div className="bg-gradient-to-r from-indigo-500 to-pink-500 p-4">
                   <span className="text-4xl">{group.icon}</span>
                 </div>
@@ -43,9 +43,6 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-gray-600">Join the conversation and connect with others who share your interests!</p>
-                  <button className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-300">
-                    Join Group
-                  </button>
                 </div>
               </div>
             </Link>
