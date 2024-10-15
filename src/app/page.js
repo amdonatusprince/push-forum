@@ -7,23 +7,23 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-pink-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#E6ECF7] via-[#EDF0F7] to-[#F0EDF7] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-5xl font-extrabold text-center mb-8">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500">
-            Welcome to TechFiesta
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0F5EFE] to-[#0F5EFE]">
+            Welcome Onboard!
           </span>
         </h1>
         <p className="text-xl text-center text-gray-700 max-w-2xl mx-auto mb-12">
-          Join vibrant communities, share your thoughts, and connect with like-minded individuals on the TechFiesta ecosystem.
+          This is your place to network with other developers and tech enthusiasts, ask questions and get ready for an amazing learning experience. 
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {groups.map((group) => (
             <Link key={group.id} href={`/groups/${group.id}`}>
               <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition duration-300 transform hover:scale-105 cursor-pointer">
-                <div className="bg-gradient-to-r from-indigo-500 to-pink-500 p-4">
-                  <span className="text-4xl">{group.icon}</span>
-                </div>
+              <div className="bg-gradient-to-r from-[#D8E3F0] via-[#C7D9F9] to-[#3779FD] p-4">
+                <span className="text-4xl">{group.icon}</span>
+              </div>
                 <div className="p-6">
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">{group.name}</h2>
                   <div className="flex justify-between text-sm text-gray-500 mb-4">

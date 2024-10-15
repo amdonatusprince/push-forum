@@ -1,7 +1,9 @@
 "use client"
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import CreateGroupModal from "./CreateGroupModal";
+import logo from "../../public/logo.svg";
 
 export default function Navbar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,15 +21,26 @@ export default function Navbar() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="flex-shrink-0 flex items-center">
-                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-500">
-                  TechFiesta
+                <div className="w-[25.53px] h-[25.53px] mr-1">
+                  <Image
+                    width={26}
+                    height={26}
+                    src={logo}
+                    alt="TechFiesta Logo"
+                  />
+                </div>
+                <span className="text-[22.67px] sm:text-[18.35px] lg:text-[25.53px] text-black">
+                  tech
+                  <span className="inline bg-gradient-to-r from-[#0F5EFE] to-[#0F5EFE] text-transparent bg-clip-text font-bold">
+                    Fiesta
+                  </span>
                 </span>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-md shadow-md transition duration-300 transform hover:scale-105"
+                className="bg-[#0F5EFE] text-white px-4 py-2 rounded-md shadow-md transition duration-300 hover:bg-white hover:text-[#0F5EFE] hover:border-[#0F5EFE] hover:border-2"
               >
                 Create Group
               </button>
