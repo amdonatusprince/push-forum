@@ -16,7 +16,7 @@ export default function SuccessModal({ isOpen, onClose, groupId }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4 sm:px-0">
       <div className="bg-white rounded-lg p-6 sm:p-8 w-full max-w-md">
         <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-green-600">Group Created Successfully!</h2>
-        <p className="mb-3 sm:mb-4 text-sm sm:text-base">Your new group has been created. Here's the group ID:</p>
+        <p className="mb-3 sm:mb-4 text-sm sm:text-base">Your new group has been created. Here&apos;s the group ID:</p>
         <div className="bg-gray-100 p-3 sm:p-4 rounded-md mb-4 sm:mb-6">
           <code className="text-xs sm:text-sm break-all block mb-3">{groupId}</code>
           <button
