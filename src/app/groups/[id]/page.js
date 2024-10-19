@@ -1,19 +1,68 @@
-"use client"
+"use client";
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { useAccount, useWalletClient } from 'wagmi';
+import { PushAPI, CONSTANTS } from '@pushprotocol/restapi';
 import EmojiPicker from 'emoji-picker-react';
-import { FiSend, FiImage, FiSmile, FiX } from 'react-icons/fi';
+import { FiSend, FiSmile, FiX } from 'react-icons/fi';
 import ReactEmoji from 'react-emoji-render';
+import { Toaster, toast } from 'react-hot-toast';
 
 export default function GroupChatPage() {
+  const { data: signer } = useWalletClient();
   const { id } = useParams();
   const router = useRouter();
+  const { address, isConnected } = useAccount();
   const [messages, setMessages] = useState([]);
+  const [pushUser, setPushUser] = useState(null);
+  const [name, setName] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const fileInputRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    if (!isConnected) {
+      router.push('/');
+    }
+  }, [isConnected, router]);
+
+  const fetchMessages = async (user) => {
+    setIsLoadingMessages(true);
+    try {
+      const fetchedMessages = await user.chat.history(id);
+      setMessages(fetchedMessages.reverse());
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast.error("Failed to load messages. Please try again.");
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  useEffect(() => {
+    const initializePushUser = async () => {
+      if (isConnected && signer) {
+        try {
+          const user = await PushAPI.initialize(signer, { env: CONSTANTS.ENV.STAGING });
+          setPushUser(user);
+          const groupInfo = await user.chat.group.info(id);
+          const groupName = groupInfo.groupName;
+          setName(groupName);
+          
+          await fetchMessages(user);
+        } catch (error) {
+          console.error("Error initializing Push user:", error);
+          toast.error("Failed to initialize chat. Please try again.");
+          setIsLoadingMessages(false);
+        }
+      }
+    };
+
+    initializePushUser();
+  }, [isConnected, signer, id]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -21,17 +70,30 @@ export default function GroupChatPage() {
     }
   }, [messages]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (newMessage.trim()) {
-      const message = {
-        id: Date.now(),
-        content: newMessage,
-        sender: { name: 'You', avatar: `https://api.dicebear.com/9.x/micah/svg?seed=${"justholder"}.svg` },
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([...messages, message]);
-      setNewMessage('');
+    if (newMessage.trim() && pushUser) {
+      setIsSending(true);
+      try {
+        await pushUser.chat.send(id, {
+          type: 'Text',
+          content: newMessage,
+        });
+
+        // Add the new message to the state immediately
+        setMessages(prevMessages => [...prevMessages, {
+          fromDID: address,
+          messageContent: newMessage,
+          timestamp: new Date().toISOString()
+        }]);
+        setNewMessage('');
+        // toast.success("Message sent successfully!");
+      } catch (error) {
+        console.error("Error sending message:", error);
+        toast.error("Failed to send message. Please try again.");
+      } finally {
+        setIsSending(false);
+      }
     }
   };
 
@@ -39,33 +101,22 @@ export default function GroupChatPage() {
     router.push('/');
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const message = {
-          id: Date.now(),
-          content: event.target.result,
-          sender: { name: 'You', avatar: `https://api.dicebear.com/9.x/micah/svg?seed=${"placeholder"}.svg` },
-          timestamp: new Date().toISOString(),
-        };
-        setMessages([...messages, message]);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleEmojiClick = (emojiObject) => {
     setNewMessage((prevMessage) => prevMessage + emojiObject.emoji);
     setShowEmojiPicker(false);
   };
 
+  // If not connected, return null to prevent rendering anything while redirecting
+  if (!isConnected) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] p-4 bg-gradient-to-br from-[#E6ECF7] via-[#EDF0F7] to-[#F0EDF7]">
+      <Toaster position="top-right" />
       <div className="flex-grow bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden">
         <div className="bg-gradient-to-r from-[#3779FD] via-[#C7D9F9] to-[#3779FD] text-white p-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Group Chat: {id}</h1>
+          <h1 className="text-2xl font-bold">{name}</h1>
           <div className="flex items-center space-x-4">
             <button
               onClick={handleExitChat}
@@ -76,30 +127,24 @@ export default function GroupChatPage() {
           </div>
         </div>
         <div className="flex-grow overflow-y-auto p-6" ref={chatContainerRef}>
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))}
+          {isLoadingMessages ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mb-4"></div>
+              <p className="text-xl font-semibold text-gray-700">Loading Group Messages...</p>
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <ChatMessage key={index} message={message} currentUserAddress={address} />
+            ))
+          )}
         </div>
         <form onSubmit={handleSendMessage} className="p-4 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center space-x-3">
             <button
               type="button"
-              onClick={() => fileInputRef.current.click()}
-              className="text-[#0F5EFE] hover:text-blue-700 transition-colors"
-            >
-              <FiImage size={24} />
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*,image/gif"
-              className="hidden"
-            />
-            <button
-              type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="text-[#0F5EFE] hover:text-blue-700 transition-colors"
+              disabled={isSending}
             >
               <FiSmile size={24} />
             </button>
@@ -109,13 +154,21 @@ export default function GroupChatPage() {
               onChange={(e) => setNewMessage(e.target.value)}
               className="flex-grow px-4 py-2 border border-gray-300 rounded-l-full focus:outline-none focus:ring-2 focus:ring-[#0F5EFE] focus:border-transparent"
               placeholder="Type your message..."
+              disabled={isSending}
             />
             <button
               type="submit"
-              className="bg-[#0F5EFE] text-white px-6 py-2 rounded-r-full hover:bg-white hover:text-[#0F5EFE] border border-[#0F5EFE] transition duration-300 flex items-center"
+              className="bg-[#0F5EFE] text-white px-6 py-2 rounded-r-full hover:bg-white hover:text-[#0F5EFE] border border-[#0F5EFE] transition duration-300 flex items-center group"
+              disabled={isSending}
             >
-              <FiSend size={20} className="mr-2" />
-              Send
+              {isSending ? (
+                <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin group-hover:border-[#0F5EFE]"></div>
+              ) : (
+                <>
+                  <FiSend size={20} className="mr-2" />
+                  Send
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -129,44 +182,54 @@ export default function GroupChatPage() {
   );
 }
 
-function ChatMessage({ message }) {
-  const isImage = message.content.startsWith('data:image') || message.content.match(/\.(jpeg|jpg|gif|png)$/) != null;
-  const isGif = message.content.match(/\.gif$/) != null;
+function ChatMessage({ message, currentUserAddress }) {
+  const isCurrentUser = currentUserAddress && message.fromDID && 
+    message.fromDID.slice(-4) === currentUserAddress.slice(-4);
+  const content = message.messageContent || '';
 
-  return (
-    <div className="flex items-start space-x-4 mb-6 animate-fade-in">
-      <div className="flex-shrink-0">
-        <Image
-          className="h-12 w-12 rounded-full border-2 border-[#0F5EFE]"
-          src={message.sender.avatar}
-          alt={message.sender.name}
-          width={48}
-          height={48}
-        />
-      </div>
-      <div className="flex-1">
-        <div className="bg-gray-100 rounded-2xl shadow-sm p-4">
-          <p className="text-sm font-medium text-[#0F5EFE] mb-1">{message.sender.name}</p>
-          {isImage ? (
-            <Image
-              src={message.content}
-              alt="Shared image"
-              width={300}
-              height={200}
-              className="mt-2 rounded-lg"
-            />
-          ) : isGif ? (
-            <img src={message.content} alt="Shared GIF" className="mt-2 rounded-lg" />
-          ) : (
-            <p className="text-gray-800">
-              <ReactEmoji text={message.content} />
-            </p>
-          )}
+  const renderMessage = () => (
+    <div className={`flex items-start space-x-4 mb-6 animate-fade-in ${isCurrentUser ? 'justify-end' : ''}`}>
+      {!isCurrentUser && (
+        <div className="flex-shrink-0">
+          <Image
+            className="h-12 w-12 rounded-full border-2 border-[#0F5EFE]"
+            src={`https://api.dicebear.com/9.x/micah/svg?seed=${message.fromDID || 'default'}.svg`}
+            alt="User Avatar"
+            width={48}
+            height={48}
+          />
+        </div>
+      )}
+      <div className={`flex-1 ${isCurrentUser ? 'text-right' : ''}`}>
+        <div className={`inline-block rounded-2xl shadow-sm p-4 ${
+          isCurrentUser ? 'bg-[#E3F2FD] text-[#0F5EFE]' : 'bg-gray-100 text-gray-800'
+        }`}>
+          <p className={`text-sm font-medium mb-1 ${
+            isCurrentUser ? 'text-[#0F5EFE]' : 'text-gray-600'
+          }`}>
+            {isCurrentUser ? 'You' : `User ${message.fromDID ? `${message.fromDID.slice(0, 6)}...${message.fromDID.slice(-4)}` : 'Unknown'}`}
+          </p>
+          <p>
+            <ReactEmoji text={content} />
+          </p>
         </div>
         <span className="text-xs text-gray-500 mt-1 block">
-          {new Date(message.timestamp).toLocaleString()}
+          {message.timestamp ? new Date(message.timestamp).toLocaleString() : 'Unknown time'}
         </span>
       </div>
+      {isCurrentUser && (
+        <div className="flex-shrink-0">
+          <Image
+            className="h-12 w-12 rounded-full border-2 border-[#0F5EFE]"
+            src={`https://api.dicebear.com/9.x/micah/svg?seed=${message.fromDID || 'default'}.svg`}
+            alt="Your Avatar"
+            width={48}
+            height={48}
+          />
+        </div>
+      )}
     </div>
   );
+
+  return message ? renderMessage() : null;
 }
