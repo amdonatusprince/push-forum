@@ -33,8 +33,8 @@ export default function Home() {
       if (pushUser && address) {
         setIsLoading(true);
         const groupIds = [
-          '4c80f40b5ab17b7054c9959d0e947c3b5df05a7ed140b11114ffd51a122e5c9c',
-          'a36066648b80285992f9ed03ef524936f16f19f3612184dd80b51a4ea667a8ad'
+          '8b19fd494805ab8ee211a9f62152c811fcd8ac44ec1832669d8d1787983f12ed',
+          '4ec47f448d3b780b3547fbd5cff36e22eee32cb4f1fb8f1ef15bdbdbe23aa731'
         ];
 
         const staticIcons = ['💬', '💻'];
