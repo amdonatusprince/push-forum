@@ -8,6 +8,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { FiSend, FiSmile, FiX } from 'react-icons/fi';
 import ReactEmoji from 'react-emoji-render';
 import { Toaster, toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function GroupChatPage() {
   const { data: signer } = useWalletClient();
@@ -187,6 +188,29 @@ function ChatMessage({ message, currentUserAddress }) {
     message.fromDID.slice(-4) === currentUserAddress.slice(-4);
   const content = message.messageContent || '';
 
+  // Function to render message content with clickable links
+  const renderContent = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   const renderMessage = () => (
     <div className={`flex items-start space-x-4 mb-6 animate-fade-in ${isCurrentUser ? 'justify-end' : ''}`}>
       {!isCurrentUser && (
@@ -210,7 +234,7 @@ function ChatMessage({ message, currentUserAddress }) {
             {isCurrentUser ? 'You' : `User ${message.fromDID ? `${message.fromDID.slice(0, 6)}...${message.fromDID.slice(-4)}` : 'Unknown'}`}
           </p>
           <p>
-            <ReactEmoji text={content} />
+            {renderContent(content)}
           </p>
         </div>
         <span className="text-xs text-gray-500 mt-1 block">
