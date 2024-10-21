@@ -2,8 +2,8 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
-import { PushAPI, CONSTANTS } from '@pushprotocol/restapi';
 import { Toaster, toast } from 'react-hot-toast';
+import { initializePushUser, getPushUserFromStorage } from '../../utils/pushUtils';
 
 export default function Home() {
   const [groups, setGroups] = useState([]);
@@ -13,10 +13,13 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializePushUser = async () => {
+    const initPush = async () => {
       if (isConnected && signer) {
         try {
-          const user = await PushAPI.initialize(signer, { env: CONSTANTS.ENV.STAGING });
+          let user = await getPushUserFromStorage(signer);
+          if (!user) {
+            user = await initializePushUser(signer);
+          }
           setPushUser(user);
         } catch (error) {
           console.error("Error initializing Push user:", error);
@@ -25,7 +28,7 @@ export default function Home() {
       }
     };
 
-    initializePushUser();
+    initPush();
   }, [isConnected, signer]);
 
   useEffect(() => {

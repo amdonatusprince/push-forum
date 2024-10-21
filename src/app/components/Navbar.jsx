@@ -9,6 +9,8 @@ import CreateGroupModal from "./CreateGroupModal";
 import SuccessModal from "./SuccessModal";
 import logo from "../../public/logo.svg";
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { clearPushUserFromStorage } from '../../../utils/pushUtils';
+import { Toaster, toast } from 'react-hot-toast';
 
 export default function Navbar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,6 +65,8 @@ export default function Navbar() {
 
   const handleDisconnect = () => {
     disconnect();
+    clearPushUserFromStorage(); // Clear Push user info from local storage
+    toast.success("Logged out successfully");
   };
 
   const toggleMobileMenu = () => {
@@ -71,6 +75,7 @@ export default function Navbar() {
 
   return (
     <>
+    <Toaster position="top-right" />
       <nav className="bg-white bg-opacity-80 backdrop-filter backdrop-blur-lg shadow-lg sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between h-16">
@@ -166,6 +171,7 @@ export default function Navbar() {
           groupId={createdGroupId}
         />
       )}
+      
     </>
   );
 }

@@ -6,17 +6,15 @@ import { useAccount, useWalletClient } from 'wagmi';
 import { PushAPI, CONSTANTS } from '@pushprotocol/restapi';
 import EmojiPicker from 'emoji-picker-react';
 import { FiSend, FiSmile, FiX } from 'react-icons/fi';
-import ReactEmoji from 'react-emoji-render';
 import { Toaster, toast } from 'react-hot-toast';
-import Link from 'next/link';
+import { getPushUserFromStorage } from '../../../../utils/pushUtils';
 
 export default function GroupChatPage() {
-  const { data: signer } = useWalletClient();
   const { id } = useParams();
   const router = useRouter();
   const { address, isConnected } = useAccount();
+  const { data: signer } = useWalletClient();
   const [messages, setMessages] = useState([]);
-  const [pushUser, setPushUser] = useState(null);
   const [name, setName] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -27,43 +25,33 @@ export default function GroupChatPage() {
   useEffect(() => {
     if (!isConnected) {
       router.push('/');
+      return;
     }
-  }, [isConnected, router]);
 
-  const fetchMessages = async (user) => {
-    setIsLoadingMessages(true);
-    try {
-      const fetchedMessages = await user.chat.history(id);
-      setMessages(fetchedMessages.reverse());
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      toast.error("Failed to load messages. Please try again.");
-    } finally {
-      setIsLoadingMessages(false);
-    }
-  };
-
-  useEffect(() => {
-    const initializePushUser = async () => {
-      if (isConnected && signer) {
-        try {
-          const user = await PushAPI.initialize(signer, { env: CONSTANTS.ENV.STAGING });
-          setPushUser(user);
-          const groupInfo = await user.chat.group.info(id);
-          const groupName = groupInfo.groupName;
-          setName(groupName);
-          
-          await fetchMessages(user);
-        } catch (error) {
-          console.error("Error initializing Push user:", error);
-          toast.error("Failed to initialize chat. Please try again.");
-          setIsLoadingMessages(false);
+    const fetchGroupInfo = async () => {
+      try {
+        const user = await getPushUserFromStorage();
+        if (!user) {
+          toast.error("Push user not found. Please go back to the home page and reconnect.");
+          router.push('/');
+          return;
         }
+
+        const groupInfo = await user.chat.group.info(id);
+        setName(groupInfo.groupName);
+        
+        const fetchedMessages = await user.chat.history(id);
+        setMessages(fetchedMessages.reverse());
+      } catch (error) {
+        console.error("Error fetching group info:", error);
+        toast.error("Failed to load group information. Please try again.");
+      } finally {
+        setIsLoadingMessages(false);
       }
     };
 
-    initializePushUser();
-  }, [isConnected, signer, id]);
+    fetchGroupInfo();
+  }, [id, isConnected, router]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -73,22 +61,23 @@ export default function GroupChatPage() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (newMessage.trim() && pushUser) {
+    if (newMessage.trim() && signer) {
       setIsSending(true);
       try {
-        await pushUser.chat.send(id, {
+        // Reinitialize PushAPI with signer for write operations
+        const user = await PushAPI.initialize(signer, { env: CONSTANTS.ENV.STAGING });
+
+        await user.chat.send(id, {
           type: 'Text',
           content: newMessage,
         });
 
-        // Add the new message to the state immediately
         setMessages(prevMessages => [...prevMessages, {
           fromDID: address,
           messageContent: newMessage,
           timestamp: new Date().toISOString()
         }]);
         setNewMessage('');
-        // toast.success("Message sent successfully!");
       } catch (error) {
         console.error("Error sending message:", error);
         toast.error("Failed to send message. Please try again.");
@@ -107,7 +96,6 @@ export default function GroupChatPage() {
     setShowEmojiPicker(false);
   };
 
-  // If not connected, return null to prevent rendering anything while redirecting
   if (!isConnected) {
     return null;
   }
