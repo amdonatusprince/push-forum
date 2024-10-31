@@ -40,7 +40,10 @@ export default function GroupChatPage() {
         const groupInfo = await user.chat.group.info(id);
         setName(groupInfo.groupName);
         
-        const fetchedMessages = await user.chat.history(id);
+        const fetchedMessages = await user.chat.history(id, {
+          limit: 30
+        });
+        
         setMessages(fetchedMessages.reverse());
       } catch (error) {
         console.error("Error fetching group info:", error);
